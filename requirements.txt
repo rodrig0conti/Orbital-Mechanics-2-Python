@@ -1,0 +1,6 @@
+numpy
+pillow
+PyOpenGL
+PyQt6
+vispy
+matplotlib
