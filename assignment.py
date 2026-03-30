@@ -4,86 +4,132 @@ import sat_lib as sl
 import orbit_lib as ol
 import simulator as sim
 
+USE_TLE = True  # False = órbita circular (Assignment 1), True = TLE (Assignment 2)
+# Choose which satellite to simulate
+SATELLITE = "HUBBLE"   # options: "ISS", "HUBBLE"
+
+def get_tle_and_epoch():
+    if SATELLITE == "ISS":
+        return ol.get_iss_tle_params(), ol.get_iss_epoch()
+    elif SATELLITE == "HUBBLE":
+        return ol.get_hubble_tle_params(), ol.get_hubble_epoch()
+    else:
+        raise ValueError("Unknown satellite selected")
 
 class ScenarioAssignment1(sim.BaseScenario):
 
     def init(self, t):
-        print("R_E =", ol.R_E)
-        print("mu  =", ol.mu)
-        self.theta_E = 0.0
-        self.r = ol.R_E + 400
-        self.T = 2 * np.pi * np.sqrt(self.r**3 / ol.mu)
-        self.omega = 2 * np.pi / self.T
 
-        print("r   =", self.r)
-        print("T   =", self.T)
-        print("omega =", self.omega)
-        print("w_E =", ol.w_E)
+        if USE_TLE:
+            # Obtener parámetros TLE y epoch del satélite seleccionado
+            (e, revs_per_day, Me, Omega, i, w), epoch = get_tle_and_epoch()
 
-        self.theta_E = 0.0  # ángulo de la Tierra (rad)
+            # Calcular ángulo sideral inicial de la Tierra
+            JD = ol.epoch_to_julian_date(epoch)
+            theta0 = ol.sidereal_angle(JD)
+            self.theta_E = theta0
 
+        else:
+            # Modo órbita circular (Assignment 1)
+            self.theta_E = 0.0
 
-        # (Earth + 400 km)
-        self.r = ol.R_E + 400 #run it in kilometers
-
-        # Orbital period
-        self.T = 2 * np.pi * np.sqrt(self.r**3 / ol.mu)
-
-
-        # Angular velocity omega (radians per second)
-        self.omega = 2 * np.pi / self.T
-
-        # Initial angle
-        self.theta = 0.0
-
-        # Initial orientation (identity quaternion)
-        self.q = su.Quaternion()
-        angle = np.deg2rad(0) #ángulo inicial de la tierra
-        self.q_E = su.Quaternion([np.cos(angle/2), 0, 0, np.sin(angle/2)])  # rotación 30° alrededor de z
-
-
-        # Initial position in ECI (kilometers)
-        self.r_i = np.array([
-            self.r*np.cos(self.theta),
-            self.r*np.sin(self.theta),
-            0
+        # Cuaternión de la Tierra a partir de theta_E
+        self.q_E = su.Quaternion([
+            np.cos(self.theta_E / 2),
+            0,
+            0,
+            np.sin(self.theta_E / 2)
         ])
 
+        # Orientación inicial del satélite
+        self.q = su.Quaternion()
+
+        if USE_TLE:
+            # Estado inicial del satélite desde TLE
+            r0, v0 = ol.state_from_tle_params(e, revs_per_day, Me, Omega, i, w)
+
+            # Propagación de la órbita
+            self.times, self.r_list, self.v_list = ol.propagate_orbit_dt(
+                r0, v0, 0, 6000, 1
+            )
+            self.step_index = 0
+            self.r_i = self.r_list[0]
+
+            # Debug opcional
+            print("Epoch:", epoch)
+            print("JD:", JD)
+            print("theta0 (deg):", np.rad2deg(theta0))
+
+        else:
+            # --- MODO ASSIGNMENT 1: órbita circular simple ---
+            self.r = ol.R_E + 400
+            self.T = 2 * np.pi * np.sqrt(self.r**3 / ol.mu)
+            self.omega = 2 * np.pi / self.T
+            self.theta = 0.0
+
+            self.r_i = np.array([
+                self.r*np.cos(self.theta),
+                self.r*np.sin(self.theta),
+                0
+            ])
+
+        # Inicializar log de posiciones
         self.pos_plot = np.array([[t,
-                           self.r_i[0],
-                           self.r_i[1],
-                           self.r_i[2]]])
+                                self.r_i[0],
+                                self.r_i[1],
+                                self.r_i[2]]])
+
 
 
     def update(self, t, dt):
-        # Update angle
-        self.theta += self.omega * dt
 
-        # Update quaternion (simple rotation around z)
-        omega_vec = np.array([0, 0, self.omega])
-        dq = 0.5 * (self.q * su.Quaternion([0, *omega_vec]))
-        self.q = su.Quaternion(self.q.q + dt * dq.q)
-        self.q.normalize()
+        # -------------------------
+        # 1. Actualizar posición del satélite
+        # -------------------------
+        if USE_TLE:
+          
 
-        # Update satellite position in ECI (kilometers)
-        self.r_i = np.array([
-            self.r*np.cos(self.theta),
-            self.r*np.sin(self.theta),
-            0
-        ])
+            # Usar la órbita propagada desde TLE
+            if self.step_index < len(self.r_list):
+                self.r_i = self.r_list[self.step_index]
+                self.step_index += 1
+        else:
+            # Órbita circular clásica
+            self.theta += self.omega * dt
+            self.r_i = np.array([
+                self.r*np.cos(self.theta),
+                self.r*np.sin(self.theta),
+                0
+            ])
 
-        # debug to understand problem: print first 10 steps
-        if t < 10:
+        # -------------------------
+        # 2. Actualizar orientación del satélite
+        # -------------------------
+        if not USE_TLE:
+            # Solo rotamos el satélite si estamos en órbita circular
+            omega_vec = np.array([0, 0, self.omega])
+            dq = 0.5 * (self.q * su.Quaternion([0, *omega_vec]))
+            self.q = su.Quaternion(self.q.q + dt * dq.q)
+            self.q.normalize()
+
+        # -------------------------
+        # 3. Debug (solo para órbita circular)
+        # -------------------------
+        if t < 10 and not USE_TLE:
             print(f"t={t:.1f}, theta={self.theta:.6f}, r_i={self.r_i}")
 
-        # Log trajectory (in km)
+        # -------------------------
+        # 4. Log de trayectoria
         self.pos_plot = np.vstack((self.pos_plot,
-                                   np.array([t,
-                                             self.r_i[0],
-                                             self.r_i[1],
-                                             self.r_i[2]])))
-        # Rotación de la Tierra (ECEF)
-        earth_spin_factor = 1  # para que se note; luego lo bajas si quieres
+                               np.array([t,
+                                         self.r_i[0],
+                                         self.r_i[1],
+                                         self.r_i[2]])))
+
+        # -------------------------
+        # 5. Rotación de la Tierra (ECEF)
+        # -------------------------
+        earth_spin_factor = 1
         self.theta_E += ol.w_E * earth_spin_factor * dt
 
         self.q_E = su.Quaternion([
@@ -92,29 +138,38 @@ class ScenarioAssignment1(sim.BaseScenario):
             0,
             np.sin(self.theta_E / 2)
         ])
-        if abs(self.theta - 2*np.pi) < 0.01:
+
+        # -------------------------
+        # 6. Mensaje de órbita completa (solo modo circular)
+        # -------------------------
+        if not USE_TLE and abs(self.theta - 2*np.pi) < 0.01:
             print("Órbita completa en t =", t)
 
-
-        
-
-        if t % 1000 < dt:  # cada 1000 s simulados aprox
-        # ángulo alrededor de z a partir del cuaternión (aprox)
+        # -------------------------
+        # 7. Debug de la Tierra
+        # -------------------------
+        if t % 1000 < dt:
             angle = 2 * np.arccos(self.q_E.q[0])
             print(f"Earth angle ≈ {np.rad2deg(angle):.6f} deg")
 
 
 
-
     def get(self):
-        return [
-        ['satellite', self.r_i, self.q],
-        ['body frame', self.r_i, self.q],
-        ['sat ref frame', self.r_i, su.Quaternion()],  # ejes ECI en el satélite
-        ['earth', np.zeros(3), self.q_E],
-        ['ECEF frame', np.zeros(3), self.q_E],
-        ['ECI frame', np.zeros(3), su.Quaternion()],
+        objects = [
+            ['satellite', self.r_i, self.q],
+            ['body frame', self.r_i, self.q],
+            ['sat ref frame', self.r_i, su.Quaternion()],
+            ['earth', np.zeros(3), self.q_E],
+            ['ECEF frame', np.zeros(3), self.q_E],
+            ['ECI frame', np.zeros(3), su.Quaternion()],
         ]
+
+         # Añadir órbita completa si estamos en modo TLE
+        if USE_TLE:
+            objects.append(['orbit', self.r_list, su.Quaternion()])
+
+        return objects
+
 
 
     def post_process(self, t, dt):

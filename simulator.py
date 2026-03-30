@@ -9,6 +9,8 @@ from vispy.util.quaternion import Quaternion as Quat
 from vispy.io import imread, read_mesh
 from vispy.visuals.filters import TextureFilter
 import numpy as np
+from vispy.scene.visuals import Line
+
 
 import threading
 import queue
@@ -40,10 +42,17 @@ class SimCanvas(scene.SceneCanvas):
         self.show()
         self.freeze()
 
+    def make_orbit_line(self):
+        # Línea vacía al inicio
+        self.orbit_line = Line(pos=np.zeros((2, 3)), color='yellow', width=2, parent=self.view.scene)
+        self.scene_list['orbit'] = (self.orbit_line, 1.0)
+
     def make_default_scene(self,conf):
         self.make_default_satellite(conf['satellite_model'])
         self.make_default_earth(conf['earth_model'],conf['earth_texture'])
         self.make_default_frames()
+        self.make_orbit_line()
+
         for k in self.scene_list.keys():
             self.scene_list[k][0].transform = Mat4()
         
@@ -76,10 +85,20 @@ class SimCanvas(scene.SceneCanvas):
         self.scene_list['ECI frame'] = (self.eci_frame,1.3*self.scene_list['earth'][1])
         self.scene_list['ECEF frame'] = (self.ecef_frame,1.3*self.scene_list['earth'][1])
 
-    def update_scene(self,anim_data):
-        for name,p,q in anim_data:
+    def update_scene(self, anim_data):
+        for name, p, q in anim_data:
+            if name == 'orbit':
+                scaled = p / self.scale_factor
+                self.scene_list['orbit'][0].set_data(pos=scaled)
+                continue
+
             if name in self.scene_list.keys():
-                self.scene_list[name][0].transform = su.rotscaleloc_to_vispy(pos=p/self.scale_factor,quat=q,scale=self.scene_list[name][1])
+                self.scene_list[name][0].transform = su.rotscaleloc_to_vispy(
+                    pos=p/self.scale_factor,
+                    quat=q,
+                    scale=self.scene_list[name][1]
+                )
+
 
     def on_timer(self,event):
         if not self.anim_queue.empty():
