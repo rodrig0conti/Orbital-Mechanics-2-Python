@@ -1,0 +1,19 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+
+# Data files
+data/*.txt
+
+# VSCode settings
+.vscode/
+
+# Large files
+*.mp4
+*.pdf
+*.zip
