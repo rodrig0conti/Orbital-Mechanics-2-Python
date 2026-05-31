@@ -3,7 +3,7 @@
 > Modular Python framework for orbital propagation and spacecraft attitude control, originally built around a Hubble Space Telescope simulation study and extended into a configurable sandbox for further experimentation.
 
 <p align="center">
-  <img src="images/hst_visualization.png" alt="HST attitude control 3D visualization" width="70%">
+  <img src="images/image.png" alt="HST attitude control 3D visualization" width="70%">
   <br>
   <em>3D visualization of the Hubble Space Telescope in low Earth orbit, with body frame and Keplerian reference orbit rendered in vispy.</em>
 </p>
@@ -16,7 +16,7 @@ This codebase combines an orbital propagator, a spacecraft model with realistic 
 
 The project was developed as the final project for **STE-3605 Mathematical Modeling and Simulation** at UiT — The Arctic University of Norway, and was then extended independently to add the modular sandbox mode beyond what the coursework required.
 
-📄 **Full technical report:** [`docs/hst_simulation_study.pdf`](docs/hst_simulation_study.pdf)
+📄 **Full technical report:** [`docs/hst_simulation_study.pdf`](documents/HST_Simulation_Study.pdf)
 
 ---
 
@@ -60,7 +60,7 @@ The project was developed as the final project for **STE-3605 Mathematical Model
 
 ## Selected Results
 
-The full results, plots, and discussion are in the [technical report](docs/hst_simulation_study.pdf). Some highlights:
+The full results, plots, and discussion are in the [technical report](documents/HST_Simulation_Study.pdf). Some highlights:
 
 **Long-term orbital decay (Part 1).** PKepler propagated from the HST TLE epoch over 9 years gives a roughly linear decay from $474.52$ km to $427.68$ km — adequate for short horizons but unable to reproduce NASA's mid-2030s reentry prediction because atmospheric drag enters only as a frozen $\dot n$, not as a real physical force. Propagating an older TLE forward by 8.65 years against a newer one shows that the shape parameters $(a, e, i)$ remain close, while $\Omega$ and $\omega$ diverge by $+187.59°$ and $+280.07°$ respectively — pure phase error from accumulated $J_2$-induced precession.
 
@@ -177,7 +177,7 @@ The technical report includes a detailed disclosure of the development process a
 ## Related Work
 
 - [Orbital Mechanics Toolbox (MATLAB)](https://github.com/rodrig0conti/Orbital-Mechanics-Toolbox) — final bachelor project on orbital transfer optimization and Δv minimization. This Python sandbox extends and reimplements parts of that work with an object-oriented architecture and realistic spacecraft dynamics.
-- [CFD Nozzle Study](https://github.com/rodrig0conti/CFD-Nozzle-Study) — aerothermodynamic analysis of rocket nozzles.
+- [Aerospace Nozzles](https://github.com/rodrig0conti/Aerospace_Nozzles) — aerothermodynamic analysis of rocket nozzles.
 
 ---
 
