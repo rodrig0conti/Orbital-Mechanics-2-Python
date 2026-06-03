@@ -25,7 +25,7 @@ The project was developed as the final project for **STE-3605 Mathematical Model
 **Orbital dynamics**
 - Two-body Keplerian propagator (closed-form)
 - PKepler propagator with secular $J_2$ effects on $\Omega$, $\omega$, and mean-motion drift from TLE coefficients $\dot n$ and $\ddot n$
-- Multi-year decay studies, including comparison against SGP4
+- Multi-year decay studies (with SGP4 comparison performed externally in the technical report)
 - Frame conversions: ECI ↔ ECEF (with sidereal rotation), body, LVLH orbit frame, and RSW/Gaussian frame
 - TLE-based initialization
 
