@@ -1,10 +1,8 @@
 """
-=====================================================================
- STE-3605  Assignment 9 :  Hubble Space Telescope Simulation Study
-=====================================================================
+Hubble Space Telescope Simulation Study
 
-ONE modular driver for the whole assignment.  Pick what to run with the
-MODE variable just below, then run:   python assignment9.py
+One modular driver for the whole assignment.  Pick what to run with the
+MODE variable  below, then run:   python main.py
 
     MODE = "p1t1"   Part 1 Task 1 : fill Table 1 at the TLE epoch
     MODE = "p1t2"   Part 1 Task 2 : PKepler decay study + 1-orbit comparison
@@ -23,22 +21,19 @@ No new physics models are introduced (no drag / J2 beyond what the
 libraries already implement).
 """
 
-# =====================================================================
 #  CHOOSE WHAT TO RUN
-# =====================================================================
+
 MODE = "p2t1"          # "p1t1" | "p1t2" | "p2t1" | "p2t2" | "custom"
 
-# ---------------------------------------------------------------------
 #  CUSTOM run configuration (only used when MODE == "custom").
 #  The four assignment tasks just call this machinery with preset values.
-# ---------------------------------------------------------------------
 CUSTOM = {
-    # --- which TLE in TLE.txt and which orbit propagator -------------
+    # which TLE in TLE.txt and which orbit propagator 
     "tle_name"        : "HST1",           # exact name of the CURRENT TLE in TLE.txt
-    "ground_truth_tle": "HST2",           # old (Assignment-2) TLE for the p1t2 comparison
+    "ground_truth_tle": "HST2",           # old  TLE for the p1t2 comparison
     "orbit_model"     : "pkepler",        # "pkepler" | "simple"
 
-    # --- initial conditions (Part 2) --------------------------------
+    #  initial conditions (Part 2)
     # init_mode chooses how the *orbit* initial state is built; attitude
     # initial state is always (q_ib0, w_b_ib0) below.
     "init_mode"       : "tle",            # "tle" | "orbital" | "rv"
@@ -47,7 +42,7 @@ CUSTOM = {
     "q_ib0"           : [1.0, 0.0, 0.0, 0.0],
     "w_b_ib0"         : [0.3e-3, -0.1e-3, 0.2e-3],
 
-    # --- attitude control -------------------------------------------
+    #  attitude control 
     "controller"      : "PD",             # "PD" | "SM"
     "target"          : "inertial",       # "inertial" (hold q_id) | "nadir" (orbit frame)
     "q_id"            : [0.5, 0.5, 0.5, 0.5],
@@ -55,7 +50,7 @@ CUSTOM = {
     "k1"              : 3e-4, "k": 3e-3, "eps": 0.15,# SM gains (tuned, robust ~2x better than PD)
     "actuator_max"    : 1.13,             # per-axis actuator saturation [Nm], None to disable
 
-    # --- attitude determination (SANDBOX: mix & match sensors) -------
+    #  attitude determination (SANDBOX: mix & match sensors) 
     #  estimator:  "auto"            pick from whatever sensors are enabled
     #              "single_st"       1 star tracker, q_ib taken directly
     #              "davenport_multi" 3 star trackers fused by Davenport q-method
@@ -69,35 +64,32 @@ CUSTOM = {
                          [-706, 86868,  449],
                          [1491,   449, 93848]],
 
-    # --- disturbances / noise ---------------------------------------
+    #  disturbances / noise 
     "gravity_gradient": True,             # gravity-gradient torque (orbit_lib_9)
     "solar_disturb"   : True,             # solar-array disturbance d(t)
     "solar_axis"      : [0.0, 1.0, 0.0],  # body axis the scalar d(t) acts on
     "sensor_noise"    : True,             # False zeroes ALL sensor noise
-    # ---- future physics hooks (NOT implemented -- not in the libraries yet):
+    #  future physics hooks (NOT implemented -- not in the libraries yet):
     #   "drag"        : False,  # atmospheric drag force on the orbit + torque
     #   "j2_orbit"    : False,  # J2 already enters PKepler; a force model would go on the orbit
     #   "maneuvers"   : [],     # list of impulsive/finite burns (transfer maneuvers)
     # See the extension-hook comments in HSTAttitudeScenario.update().
 
-    # --- run / output -----------------------------------------------
+    # run / output 
     "n_orbits"        : 4,
     "dt"              : 1.0,
-    "visualise"       : False,            # True -> runs teacher's simulator.py (needs vispy)
+    "visualise"       : False,            
     "viz_orbits"      : 2,                # how many orbits to animate when visualise=True
     "speed_factor"    : 120,              # larger = faster playback (fewer frames per sim-second)
     "show_orbit_line" : True,             # yellow Keplerian-orbit reference line in 3D view
     "plot"            : True,
-    # ground-track background image: first path that exists is used. You almost
-    # certainly already have "3DModels/earth.jpg" because the simulator needs it.
     "earth_image"     : ["earth_grid.jpg", "3DModels/earth.jpg", "earth.jpg"],
 }
 
 # =====================================================================
 import os
 import numpy as np
-
-import simutils_9 as su          # NOTE: must come before orbit_lib_9 (circular import)
+import simutils_9 as su          
 import orbit_lib_9 as ol
 import sat_lib_9 as sl
 from simutils_9 import Quaternion
@@ -106,10 +98,8 @@ MU   = 398600.4418          # km^3/s^2
 R_E  = 6378.137             # km  (WGS-84 equatorial radius)
 TLE_FILE = "TLE.txt"
 
+#  small shared helpers 
 
-# =====================================================================
-#  small shared helpers (assignment-described quantities only)
-# =====================================================================
 def tle_to_kepler(n_revday, e, inc_deg, raan_deg, argp_deg, M_deg,
                   dn_revday2=0.0, ddn_revday3=0.0):
     """TLE mean elements -> SI/rad Kepler set used by the libraries."""
@@ -202,9 +192,8 @@ def _resolve_estimator(cfg):
                      "magnetometer plus a sun sensor; none are enabled in CONFIG.")
 
 
-# =====================================================================
 #  PART 1  -  TASK 1 :  Table 1 at the epoch
-# =====================================================================
+
 def run_p1t1(cfg):
     tle = su.read_TLE_file(TLE_FILE, cfg["tle_name"])[0]
     name, epoch, n_rev, dn, ddn, e, inc, raan, argp, M, bstar = tle
@@ -255,9 +244,7 @@ def run_p1t1(cfg):
     print("\nSaved -> data/p1t1_table1.txt")
 
 
-# =====================================================================
 #  PART 1  -  TASK 2 :  PKepler decay + 1-orbit comparison
-# =====================================================================
 def _geodetic_track(r_list, t_list):
     """ECI positions -> (lon_deg, lat_deg) ground track using the libraries."""
     lon, lat = [], []
@@ -279,7 +266,7 @@ def run_p1t2(cfg):
     a, e, i, Om, w, Me, n, dn_r, ddn_r = tle_to_kepler(n_rev, e, inc, raan,
                                                        argp, M, dn, ddn)
 
-    # ---- (1) 9-year forward propagation (orbital height) -----------
+    # (1) 9-year forward propagation (orbital height)
     years = 9.0
     step  = 6*3600.0                       # 6 h steps (good speed/accuracy tradeoff)
     n_steps = int(years*365.25*86400.0/step)
@@ -302,7 +289,7 @@ def run_p1t2(cfg):
     plt.title("HST altitude (PKepler, secular ndot only)")
     plt.grid(True); plt.savefig("data/p1t2_altitude.png", dpi=130)
 
-    # ---- (2) one-orbit PKepler vs two-body 'truth' ------------------
+    # (2) one-orbit PKepler vs two-body 'truth' 
     T  = 2*np.pi / n
     dt = 60.0
     t_arr = np.arange(0.0, T, dt)
@@ -363,7 +350,7 @@ def run_p1t2(cfg):
     ax.set_title("Ground track over one orbit"); ax.legend()
     plt.savefig("data/p1t2_groundtrack.png", dpi=130)
 
-    # ---- (3) ground-truth comparison vs an OLD (Assignment 2) TLE ----
+    #  (3) ground-truth comparison vs an OLD (Assignment 2) TLE 
     gt_name = cfg.get("ground_truth_tle", "")
     old_list = su.read_TLE_file(TLE_FILE, gt_name) if gt_name else []
     if old_list:
@@ -410,9 +397,8 @@ def th_from_M(M, e):
     return ol.true_anomaly_from_eccentric_anomaly(E, e)
 
 
-# =====================================================================
 #  PART 2  -  attitude scenario (duck-typed for the teacher's simulator)
-# =====================================================================
+
 class HSTAttitudeScenario:
     """Inertial-pointing (or nadir) attitude simulation built entirely from
     the library building blocks.  Works headless or inside simulator.py."""
@@ -420,7 +406,7 @@ class HSTAttitudeScenario:
     def __init__(self, cfg):
         self.cfg = cfg
 
-    # -- simulator interface -----------------------------------------
+    # simulator interface
     def init(self, t0):
         cfg = self.cfg
         self.J = np.array(cfg["J"], float)
@@ -441,7 +427,7 @@ class HSTAttitudeScenario:
                                      np.array(cfg["w_b_ib0"], float),
                                      self.J)
 
-        # ----- sensors (configurable sandbox) -----------------------
+        #  sensors (configurable sandbox) 
         noise = cfg.get("sensor_noise", True)
         # rate sensor: always present (the controllers need omega_b_ib)
         self.gyro = sl.gyro(q_bs=Quaternion(), p_b=np.zeros(3), mu=0.0,
@@ -537,14 +523,14 @@ class HSTAttitudeScenario:
             if u is not None:
                 sun_body.append(qbs.rotate(u))       # rotate sensor->body
 
-        # --- attitude estimate (chosen method, library estimators) ---
+        #  attitude estimate (chosen method, library estimators) 
         q_ib_est = self._estimate(qs, mag_meas, sun_body, r_i, sl.jd_from_t(t))
         self.q_ib_last = q_ib_est
 
         # orbit frame (needed by the controller signature / nadir option)
         q_io, w_i_io, dw_i_io = ol.orbit_frame_from_state(r_i, v_i)
 
-        # --- controller (we hand it the finished estimate as a quaternion) ---
+        #  controller (we hand it the finished estimate as a quaternion) 
         self.ctrl.update(t=t, r_i=r_i, v_i=v_i, q_ib=q_ib, w_b_ib=w_b_ib,
                          q_io=Quaternion(q_io), w_i_io=w_i_io, dw_i_io=dw_i_io,
                          gyro_meas=w_meas, mag_meas=np.zeros(3),
@@ -552,20 +538,20 @@ class HSTAttitudeScenario:
                          star_meas=q_ib_est)
         tau_c = self.ctrl.get_control()
 
-        # --- actuator saturation:  tau_a = 1.13 * sat(tau_c / 1.13) ---
+        #  actuator saturation:  tau_a = 1.13 * sat(tau_c / 1.13) 
         if cfg["actuator_max"] is not None:
             lim = cfg["actuator_max"]
             tau_a = lim * np.clip(tau_c/lim, -1.0, 1.0)
         else:
             tau_a = tau_c
 
-        # --- environment torques ---
+        #  environment torques 
         tau = tau_a.copy()
         if cfg["gravity_gradient"]:
             tau = tau + ol.gravity_gradient(r_i, q_ib, self.J)
         if cfg["solar_disturb"]:
             tau = tau + solar_array_disturbance(t, cfg["solar_axis"])
-        # ---- EXTENSION HOOKS (future personal-project additions) -------
+        #  EXTENSION HOOKS (future personal-project additions) 
         #  Add new *torques* here, e.g.:
         #     if cfg.get("drag"):     tau = tau + aero_torque(r_i, v_i, q_ib, ...)
         #     if cfg.get("j2_torque"):tau = tau + j2_gg_torque(r_i, q_ib, self.J)
@@ -575,7 +561,7 @@ class HSTAttitudeScenario:
         #  Impulsive transfer maneuvers: apply a delta-v to the orbit state at the
         #  scheduled time (e.g. rebuild self.orbit from r_i, v_i + dv).
 
-        # --- integrate attitude (f_ext = 0; position comes from orbit) ---
+        # integrate attitude (f_ext = 0; position comes from orbit) 
         self.body.update(t, dt, np.zeros(3), tau)
 
         # --- log attitude error ---
@@ -597,11 +583,6 @@ class HSTAttitudeScenario:
         self.tau_log.append(tau_a.copy())
         self.q_log.append(q_now.q.copy())
 
-        # Cache the *orbit* position (and current attitude) so get() can serve
-        # them to the simulator.  IMPORTANT: do NOT read position from the
-        # rigid body - we integrate the body with f_ext=0 (the orbit is
-        # propagated separately by OrbitPKepler), so the body's position
-        # drifts in a straight line.
         self.r_i_cache = r_i
         self.v_i_cache = v_i
         self.q_ib_cache = Quaternion(q_now.q)
@@ -617,7 +598,7 @@ class HSTAttitudeScenario:
         if m == "davenport_multi":
             return self.multi.estimate_attitude(qs[:3]).inverted()
 
-        # ---- vector estimators: magnetometer + sun (TRIAD / Davenport) ----
+        #vector estimators: magnetometer + sun (TRIAD / Davenport)
         B_i = ol.magnetic_field_dipole(r_i, JD)
         s_i = ol.sun_vector(JD)
         M_B, M_A = [], []
@@ -688,11 +669,7 @@ class HSTAttitudeScenario:
 
 def run_part2(cfg):
     """Run one or more attitude scenarios and compare them on one figure."""
-    # ------------------------------------------------------------------
-    # Visualisation path: animate ONE scenario in the teacher's simulator.
-    # (We don't try to open two simultaneous 3D windows for a comparison;
-    # for the comparison plots set visualise=False.)
-    # ------------------------------------------------------------------
+   
     if cfg.get("visualise"):
         viz_cfg = dict(cfg)
         # For p2t2 we want to animate the 3-ST case; for p2t1 the SMC case.
@@ -709,9 +686,6 @@ def run_part2(cfg):
         _run_with_simulator(viz_cfg)
         return
 
-    # ------------------------------------------------------------------
-    # Headless path: run the comparison scenarios, save data + comparison plot.
-    # ------------------------------------------------------------------
     if cfg.get("_compare") == "pd_vs_sm":
         runs = [dict(cfg, controller="PD"), dict(cfg, controller="SM")]
     elif cfg.get("_compare") == "1_vs_3_st":
@@ -808,9 +782,7 @@ def _run_with_simulator(cfg):
     sim.create_and_start_simulation(sim_config, sc)
 
 
-# =====================================================================
 #  PRESETS for the four assignment tasks
-# =====================================================================
 def preset(mode):
     cfg = dict(CUSTOM)
     if mode == "p2t1":
