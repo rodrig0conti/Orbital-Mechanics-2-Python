@@ -1,7 +1,7 @@
 """
 montecarlo_pointing.py
-----------------------
-studio monte carlo del true pointing error dell'HST.
+
+test monte carlo del true pointing error dell'HST.
 corre lo stesso scenario N volte con semi diversi (ma fissi, quindi
 riproducibili) e calcola media e deviazione standard del pointing error
 sull'ultima orbita. serve a mostrare che la conclusione PD vs SMC non
@@ -65,9 +65,9 @@ def montecarlo(controller="SM", n_star_trackers=1, N=20):
 if __name__ == "__main__":
     # esempio: confronto PD vs SMC su N semi
     N = 10
-    print("=== PD baseline ===")
+    print(" PD baseline ")
     pd = montecarlo(controller="PD", n_star_trackers=1, N=N)
-    print("\n=== SMC ===")
+    print("\n SMC ")
     sm = montecarlo(controller="SM", n_star_trackers=1, N=N)
 
     print(f"\n--- confronto ---")
